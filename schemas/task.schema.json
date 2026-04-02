@@ -1,0 +1,240 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.agentnet.ai/task.schema.json",
+  "title": "Task Definition",
+  "description": "AgentNet Protocol V3 Task 数据结构定义",
+  "type": "object",
+  "required": ["task_id", "type", "status", "input"],
+
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^task_[a-zA-Z0-9_-]+$",
+      "description": "唯一任务标识符，格式: task_<uuid>"
+    },
+
+    "type": {
+      "type": "string",
+      "enum": [
+        "generic",
+        "shopping",
+        "coding",
+        "research",
+        "data_processing",
+        "multi_agent_collaboration",
+        "custom"
+      ],
+      "description": "任务类型"
+    },
+
+    "status": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "cancelled"],
+      "description": "任务当前状态"
+    },
+
+    "input": {
+      "type": "object",
+      "description": "任务输入参数（由任务类型决定结构）",
+      "properties": {
+        "query": { "type": "string", "description": "用户查询或指令" },
+        "message": { "type": "string", "description": "消息内容" }
+      },
+      "additionalProperties": true
+    },
+
+    "output": {
+      "type": "object",
+      "description": "任务执行结果（仅 completed 状态有值）",
+      "additionalProperties": true
+    },
+
+    "error": {
+      "type": "object",
+      "description": "任务错误信息（仅 failed 状态有值）",
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "INVALID_INPUT",
+            "EXECUTION_FAILED",
+            "TIMEOUT",
+            "MAX_RETRIES_EXCEEDED",
+            "UNAUTHORIZED",
+            "NOT_FOUND",
+            "RATE_LIMIT_EXCEEDED",
+            "SYSTEM_ERROR"
+          ]
+        },
+        "message": { "type": "string" },
+        "details": { "type": "object", "additionalProperties": true }
+      }
+    },
+
+    "context": {
+      "type": "object",
+      "description": "任务上下文信息",
+      "properties": {
+        "user_id": { "type": "string" },
+        "session_id": { "type": "string" },
+        "tenant_id": { "type": "string" },
+        "preferences": { "type": "object", "additionalProperties": true },
+        "metadata": { "type": "object", "additionalProperties": true }
+      }
+    },
+
+    "orchestration": {
+      "type": "object",
+      "description": "DAG 工作流编排配置",
+      "properties": {
+        "dag": {
+          "type": "array",
+          "description": "DAG 节点列表",
+          "items": {
+            "type": "object",
+            "required": ["step_id", "action"],
+            "properties": {
+              "step_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "description": "步骤ID（小写字母、数字、下划线）"
+              },
+              "action": {
+                "type": "string",
+                "description": "执行的 Capability ID"
+              },
+              "depends_on": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "前置依赖步骤ID列表"
+              },
+              "retry_policy": {
+                "type": "object",
+                "properties": {
+                  "max_retries": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10,
+                    "default": 3
+                  },
+                  "backoff_ms": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 60000,
+                    "default": 1000
+                  },
+                  "max_backoff_ms": {
+                    "type": "integer",
+                    "minimum": 1000,
+                    "maximum": 300000,
+                    "default": 30000
+                  },
+                  "retry_on": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["TIMEOUT", "RATE_LIMIT", "NETWORK_ERROR", "SERVICE_UNAVAILABLE"]
+                    }
+                  },
+                  "do_not_retry_on": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["INVALID_INPUT", "UNAUTHORIZED", "PERMISSION_DENIED"]
+                    }
+                  }
+                }
+              },
+              "timeout_ms": {
+                "type": "integer",
+                "minimum": 1000,
+                "maximum": 300000,
+                "description": "步骤超时时间（毫秒）"
+              },
+              "config": {
+                "type": "object",
+                "description": "步骤特定配置",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "coordinator": {
+          "type": "string",
+          "description": "协调者 Agent ID（multi_agent_collaboration 类型使用）"
+        },
+        "agents": {
+          "type": "array",
+          "description": "参与协作的 Agent 列表",
+          "items": {
+            "type": "object",
+            "required": ["role", "agent_id"],
+            "properties": {
+              "role": { "type": "string" },
+              "agent_id": { "type": "string" },
+              "capabilities": { "type": "array", "items": { "type": "string" } },
+              "max_concurrent": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+
+    "error_handling": {
+      "type": "object",
+      "description": "任务级错误处理配置",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["continue", "fail_fast", "fallback"],
+          "default": "continue"
+        },
+        "fallback_step": { "type": "string" },
+        "max_consecutive_errors": { "type": "integer", "minimum": 1 },
+        "on_step_failure": {
+          "type": "string",
+          "enum": ["retry", "skip", "abort"]
+        },
+        "on_task_failure": {
+          "type": "object",
+          "properties": {
+            "notify": { "type": "array", "items": { "type": "string" } },
+            "retry_task": { "type": "boolean" },
+            "max_task_retries": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "normal", "high", "urgent"],
+          "default": "normal"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 86400000,
+          "description": "任务超时时间（毫秒）"
+        },
+        "assigned_agent": { "type": "string" },
+        "assigned_user": { "type": "string" },
+        "retry_count": { "type": "integer", "minimum": 0 },
+        "max_retries": { "type": "integer", "minimum": 0, "default": 3 },
+        "progress_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "cancelled_by": { "type": "string" },
+        "cancel_reason": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+
+  "additionalProperties": false
+}

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentNet Protocol - Playground</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 1px solid #2a2a4a;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .playground {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .playground {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #2a2a4a;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            background: #333;
+        }
+
+        .status.connected {
+            background: #10b981;
+            color: #fff;
+        }
+
+        .status.disconnected {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .config-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1rem;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #2a2a4a;
+            color: #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #3a3a5a;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .output {
+            background: #0a0a15;
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .output-line {
+            margin-bottom: 8px;
+        }
+
+        .output-line .time {
+            color: #666;
+            margin-right: 8px;
+        }
+
+        .output-line .type {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 8px;
+        }
+
+        .output-line .type.send {
+            background: #3b82f6;
+            color: #fff;
+        }
+
+        .output-line .type.recv {
+            background: #10b981;
+            color: #fff;
+        }
+
+        .output-line .type.error {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .output-line .type.info {
+            background: #6366f1;
+            color: #fff;
+        }
+
+        .quick-examples {
+            margin-top: 20px;
+        }
+
+        .quick-examples h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+
+        .example-btn {
+            padding: 8px 16px;
+            background: #2a2a4a;
+            border: 1px solid #3a3a5a;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .example-btn:hover {
+            background: #3a3a5a;
+            border-color: #667eea;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 AgentNet Protocol Playground</h1>
+            <p class="subtitle">在线体验 AgentNet Protocol V3 - 试试创建任务、调用能力！</p>
+        </header>
+
+        <div class="playground">
+            <!-- 左侧：配置和发送 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">发送请求</span>
+                    <span id="connectionStatus" class="status disconnected">未连接</span>
+                </div>
+
+                <div class="config-form">
+                    <div>
+                        <label for="apiKey">API Key</label>
+                        <input type="password" id="apiKey" placeholder="ak_live_xxxxxxxx">
+                    </div>
+
+                    <div>
+                        <label for="taskType">任务类型</label>
+                        <select id="taskType">
+                            <option value="generic">通用任务 (generic)</option>
+                            <option value="shopping">购物任务 (shopping)</option>
+                            <option value="coding">编程任务 (coding)</option>
+                            <option value="research">研究任务 (research)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="input">输入内容 (JSON)</label>
+                        <textarea id="input" placeholder='{"query": "你好"}'>{"query": "你好，测试消息"}</textarea>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="connect()">连接</button>
+                    <button class="btn-secondary" onclick="disconnect()">断开</button>
+                    <button class="btn-primary" onclick="sendTask()">发送任务</button>
+                </div>
+
+                <div class="quick-examples">
+                    <h3>快速示例</h3>
+                    <button class="example-btn" onclick="loadExample('shopping')">🛒 购物</button>
+                    <button class="example-btn" onclick="loadExample('coding')">💻 编程</button>
+                    <button class="example-btn" onclick="loadExample('research')">📊 研究</button>
+                </div>
+            </div>
+
+            <!-- 右侧：输出 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">消息日志</span>
+                    <button class="btn-secondary" onclick="clearOutput()" style="padding: 6px 12px; font-size: 0.85rem;">清空</button>
+                </div>
+
+                <div id="output" class="output">
+                    <div class="output-line">
+                        <span class="time">--:--:--</span>
+                        <span class="type info">INFO</span>
+                        <span>等待连接...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                AgentNet Protocol V3 |
+                <a href="/docs">文档</a> |
+                <a href="/schemas">Schema</a> |
+                <a href="https://github.com/agentnet/protocol">GitHub</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        const output = document.getElementById('output');
+        const status = document.getElementById('connectionStatus');
+
+        function log(type, message) {
+            const time = new Date().toLocaleTimeString();
+            const line = document.createElement('div');
+            line.className = 'output-line';
+            line.innerHTML = `
+                <span class="time">${time}</span>
+                <span class="type ${type}">${type.toUpperCase()}</span>
+                <span>${typeof message === 'object' ? JSON.stringify(message, null, 2) : message}</span>
+            `;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput() {
+            output.innerHTML = '';
+            log('info', '日志已清空');
+        }
+
+        function connect() {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) {
+                alert('请输入 API Key');
+                return;
+            }
+
+            // 注意：实际应连接真实的 AgentNet Gateway
+            // 这里仅作为前端演示
+            const wsUrl = 'wss://api.agentnet.ai/ws';
+
+            try {
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    log('info', '连接已建立');
+
+                    // 发送认证
+                ws.send(JSON.stringify({
+                        type: 'connect',
+                        payload: {
+                            agent_id: 'playground-demo',
+                            token: apiKey,
+                            protocol_version: '3.0'
+                        }
+                    }));
+                };
+
+                ws.onmessage = (event) => {
+                    const msg = JSON.parse(event.data);
+                    log('recv', msg);
+
+                    if (msg.type === 'connected') {
+                        status.textContent = '已连接';
+                        status.className = 'status connected';
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    log('error', 'WebSocket 错误');
+                };
+
+                ws.onclose = () => {
+                    log('info', '连接已关闭');
+                    status.textContent = '未连接';
+                    status.className = 'status disconnected';
+                };
+
+            } catch (e) {
+                log('error', `连接失败: ${e.message}`);
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function sendTask() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接');
+                return;
+            }
+
+            const taskType = document.getElementById('taskType').value;
+            const inputStr = document.getElementById('input').value;
+
+            let input;
+            try {
+                input = JSON.parse(inputStr);
+            } catch (e) {
+                input = { message: inputStr };
+            }
+
+            const task = {
+                type: 'task.request',
+                payload: {
+                    task_id: `task_${Date.now()}`,
+                    type: taskType,
+                    input: input
+                }
+            };
+
+            log('send', task);
+            ws.send(JSON.stringify(task));
+        }
+
+        function loadExample(type) {
+            const examples = {
+                shopping: {
+                    type: 'shopping',
+                    input: {
+                        query: '买一台3000元以内的电脑，适合编程用',
+                        preferences: { priority: '性价比' }
+                    }
+                },
+                coding: {
+                    type: 'coding',
+                    input: {
+                        action: 'generate',
+                        language: 'python',
+                        description: '创建一个快速排序函数'
+                    }
+                },
+                research: {
+                    type: 'research',
+                    input: {
+                        topic: '2026年AI Agent市场发展趋势',
+                        sources: ['web_search', 'news_api']
+                    }
+                }
+            };
+
+            document.getElementById('taskType').value = examples[type].type;
+            document.getElementById('input').value = JSON.stringify(examples[type].input, null, 2);
+            log('info', `已加载 ${type} 示例`);
+        }
+    </script>
+</body>
+</html>

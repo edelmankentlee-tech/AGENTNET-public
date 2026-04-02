@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.agentnet.ai/decision.schema.json",
+  "title": "Decision Definition",
+  "description": "AgentNet Protocol V3 Decision 数据结构定义",
+  "type": "object",
+  "required": ["decision_id", "task_id", "title", "risk_level", "options"],
+
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "pattern": "^dec_[a-zA-Z0-9_-]+$",
+      "description": "唯一决策标识符"
+    },
+
+    "task_id": {
+      "type": "string",
+      "pattern": "^task_[a-zA-Z0-9_-]+$",
+      "description": "关联的任务ID"
+    },
+
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "决策标题"
+    },
+
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "决策描述"
+    },
+
+    "reason": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "推荐理由"
+    },
+
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "置信度（0-1）"
+    },
+
+    "risk_level": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+      "description": "风险等级"
+    },
+
+    "action_type": {
+      "type": "string",
+      "enum": ["single_choice", "multiple_choice", "custom_input", "confirmation"],
+      "default": "single_choice"
+    },
+
+    "options": {
+      "type": "array",
+      "minItems": 1,
+      "description": "决策选项列表",
+      "items": {
+        "type": "object",
+        "required": ["option_id", "label"],
+        "properties": {
+          "option_id": {
+            "type": "string",
+            "pattern": "^opt_[a-zA-Z0-9_-]+$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+
+    "selected_option": {
+      "type": ["object", "null"],
+      "properties": {
+        "option_id": { "type": "string" },
+        "custom_input": { "type": "object", "additionalProperties": true }
+      }
+    },
+
+    "reasoning": {
+      "type": "array",
+      "description": "推理因子列表",
+      "items": {
+        "type": "object",
+        "required": ["factor", "weight", "contribution"],
+        "properties": {
+          "factor": {
+            "type": "string",
+            "description": "因子名称"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "权重（总和应为1）"
+          },
+          "contribution": {
+            "type": "string",
+            "description": "该因子对决策的贡献说明"
+          }
+        }
+      }
+    },
+
+    "alternatives": {
+      "type": "array",
+      "description": "备选方案列表",
+      "items": {
+        "type": "object",
+        "required": ["action", "reason", "why_not_chosen"],
+        "properties": {
+          "action": { "type": "string" },
+          "reason": { "type": "string" },
+          "why_not_chosen": { "type": "string" }
+        }
+      }
+    },
+
+    "status": {
+      "type": "string",
+      "enum": ["pending", "confirmed", "rejected", "expired", "escalated"],
+      "default": "pending"
+    },
+
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "timeout_action": {
+          "type": "string",
+          "enum": ["auto_cancel", "auto_select_first", "notify_user", "escalate"]
+        },
+        "required_role": { "type": "string" },
+        "confirmed_by": { "type": "string" },
+        "confirmed_at": { "type": "string", "format": "date-time" },
+        "rejected_reason": { "type": "string" },
+        "escalation_target": { "type": "string" }
+      }
+    },
+
+    "escalation": {
+      "type": "object",
+      "properties": {
+        "reason": { "type": "string" },
+        "required_role": { "type": "string" },
+        "target": { "type": "string" },
+        "escalated_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+
+  "additionalProperties": false
+}

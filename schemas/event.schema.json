@@ -1,0 +1,174 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.agentnet.ai/event.schema.json",
+  "title": "Event Definition",
+  "description": "AgentNet Protocol V3 Event 数据结构定义",
+  "type": "object",
+  "required": ["event_id", "event_type", "timestamp"],
+
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[a-zA-Z0-9_-]+$",
+      "description": "唯一事件标识符"
+    },
+
+    "event_type": {
+      "type": "string",
+      "description": "事件类型",
+      "enum": [
+        "task.created",
+        "task.started",
+        "task.step_started",
+        "task.step_completed",
+        "task.step_failed",
+        "task.progress",
+        "task.completed",
+        "task.failed",
+        "task.cancelled",
+        "task.retried",
+        "decision.created",
+        "decision.confirmed",
+        "decision.rejected",
+        "decision.expired",
+        "decision.escalated",
+        "capability.called",
+        "capability.started",
+        "capability.completed",
+        "capability.failed",
+        "capability.rate_limited",
+        "agent.registered",
+        "agent.online",
+        "agent.offline",
+        "agent.busy",
+        "agent.error",
+        "system.maintenance",
+        "system.alert"
+      ]
+    },
+
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "事件发生时间（UTC）"
+    },
+
+    "source": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["agent", "gateway", "runtime", "system", "user"]
+        },
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+
+    "target": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["task", "decision", "capability", "agent", "session"]
+        },
+        "id": { "type": "string" }
+      }
+    },
+
+    "correlation_id": {
+      "type": "string",
+      "description": "关联ID（用于追踪相关事件）"
+    },
+
+    "payload": {
+      "type": "object",
+      "description": "事件负载（内容取决于 event_type）",
+      "additionalProperties": true
+    },
+
+    "context": {
+      "type": "object",
+      "properties": {
+        "tenant_id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "session_id": { "type": "string" },
+        "request_id": { "type": "string" }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "string", "default": "3.0" },
+        "schema_url": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    }
+  },
+
+  "definitions": {
+    "task_event_payload": {
+      "type": "object",
+      "properties": {
+        "task_id": { "type": "string" },
+        "status": { "type": "string" },
+        "progress_percent": { "type": "number" },
+        "message": { "type": "string" },
+        "duration_ms": { "type": "integer" },
+        "step_id": { "type": "string" },
+        "output": { "type": "object" },
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        },
+        "retry_count": { "type": "integer" }
+      }
+    },
+
+    "decision_event_payload": {
+      "type": "object",
+      "properties": {
+        "decision_id": { "type": "string" },
+        "task_id": { "type": "string" },
+        "status": { "type": "string" },
+        "selected_option_id": { "type": "string" },
+        "risk_level": { "type": "string" },
+        "confirmed_by": { "type": "string" },
+        "rejected_reason": { "type": "string" }
+      }
+    },
+
+    "capability_event_payload": {
+      "type": "object",
+      "properties": {
+        "capability_id": { "type": "string" },
+        "call_id": { "type": "string" },
+        "status": { "type": "string" },
+        "execution_time_ms": { "type": "integer" },
+        "result_size_bytes": { "type": "integer" },
+        "error": { "type": "string" },
+        "rate_limit_remaining": { "type": "integer" },
+        "rate_limit_reset_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "agent_event_payload": {
+      "type": "object",
+      "properties": {
+        "agent_id": { "type": "string" },
+        "status": { "type": "string" },
+        "reason": { "type": "string" },
+        "error": { "type": "string" }
+      }
+    }
+  },
+
+  "additionalProperties": false
+}
