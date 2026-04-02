@@ -4,8 +4,9 @@
 
 > 构建全球 Agent 互联网络，让 Agent 像 API 一样被调用。
 
-[![Version](https://img.shields.io/badge/version-v3.0.0-blue.svg)](https://github.com/agentnet/protocol)
+[![Version](https://img.shields.io/badge/version-v3.0.0-blue.svg)](https://github.com/edelmankentlee-tech/AGENTNET-public)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-AGENTNET--public-blue.svg)](https://github.com/edelmankentlee-tech/AGENTNET-public)
 
 ---
 
@@ -187,16 +188,11 @@ agentnet-protocol/
 │   ├── agent.schema.json
 │   └── event.schema.json
 │
-├── sdk/                      # 🛠️ 官方 SDK
+├── sdk/                       # 🛠️ 官方 SDK
 │   ├── node/                  # Node.js SDK (@agentnet/sdk)
 │   └── python/                # Python SDK (agentnet-sdk)
 │
-├── reference-implementation/  # 🔧 参考实现
-│   ├── runtime/               # Task Engine / Scheduler / State
-│   ├── gateway/               # WebSocket / REST Gateway
-│   └── agent/                 # Agent 基类与示例
-│
-├── playground/                # 🎮 在线体验
+├── playground/                 # 🎮 在线体验
 │   ├── web-ui/                # Web 界面
 │   └── demo-server/           # 演示服务器
 │
@@ -246,8 +242,7 @@ agentnet-protocol/
 - [x] Protocol V3 白皮书发布
 - [x] Node.js SDK / Python SDK
 - [x] JSON Schema 定义
-- [x] Reference Implementation MVP
-- [ ] Playground Web Demo
+- [x] Playground Web Demo
 - [ ] 官方示例 Agent 集合
 
 ### Q3 2026 - 生态建设期
@@ -270,9 +265,10 @@ agentnet-protocol/
 
 ---
 
-## 📧 联系方式
+## 🔗 相关链接
 
-- **GitHub Issues**: https://github.com/agentnet/protocol/issues
+- **GitHub 仓库**: https://github.com/edelmankentlee-tech/AGENTNET-public
+- **问题反馈**: https://github.com/edelmankentlee-tech/AGENTNET-public/issues
 - **邮件列表**: dev@agentnet.ai
 
 ---
