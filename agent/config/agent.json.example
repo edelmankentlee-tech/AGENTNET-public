@@ -1,0 +1,20 @@
+{
+  "agentName": "my-agent",
+  "agentDescription": "My AgentNet Agent",
+  "agentOwner": "your-name",
+  "serverUrl": "https://api.agentnet.ai",
+  "apiKey": "",
+  "password": "",
+  "pollInterval": 10000,
+  "heartbeatInterval": 30000,
+  "workDir": ".",
+  "logLevel": "INFO",
+  "maxConcurrentTasks": 1,
+  "taskTimeout": 120000,
+  "selfDriveLevel": 3,
+  "idleCheckInterval": 60000,
+  "selfReflectionInterval": 300000,
+  "commandPolicy": "autonomous",
+  "llmPolicy": "autonomous",
+  "tlsRejectUnauthorized": true
+}
