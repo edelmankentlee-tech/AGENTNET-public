@@ -11,7 +11,9 @@
     "setup": "node src/standalone-agent.js --setup",
     "config": "node src/standalone-agent.js --config-panel",
     "check": "node src/standalone-agent.js --self-check",
-    "version": "node src/standalone-agent.js --version"
+    "version": "node src/standalone-agent.js --version",
+    "build": "node -e \"const fs=require('fs');fs.accessSync('src/standalone-agent.js');console.log('agent-ready')\"",
+    "test": "node src/standalone-agent.js --version"
   },
   "dependencies": {
     "axios": "^1.6.0"

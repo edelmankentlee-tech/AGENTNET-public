@@ -1,0 +1,20 @@
+{
+  "name": "@agentnet/cli",
+  "version": "1.0.0",
+  "description": "AgentNet CLI",
+  "bin": {
+    "agentnet-cli": "agentnet-cli/agentnet-cli"
+  },
+  "files": [
+    "agentnet-cli/agentnet-cli",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node -e \"const fs=require('fs');fs.accessSync('agentnet-cli/agentnet-cli');console.log('cli-ready')\"",
+    "test": "bash agentnet-cli/agentnet-cli --version"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}

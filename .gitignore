@@ -1,0 +1,13 @@
+.DS_Store
+*.log
+*.tsbuildinfo
+
+node_modules/
+dist/
+build/
+coverage/
+.next/
+.turbo/
+
+__pycache__/
+*.pyc

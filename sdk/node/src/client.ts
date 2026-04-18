@@ -30,7 +30,7 @@ export class AgentNetClient {
   private eventHandlers: Map<string, Set<(event: TaskEvent) => void>> = new Map();
   private decisionHandlers: Set<(decision: DecisionRequest) => Promise<void>> = new Set();
   private pendingTasks: Map<string, {
-    resolve: (result: TaskResult) => void;
+    resolve: (result: unknown) => void;
     reject: (error: Error) => void;
   }> = new Map();
 
@@ -227,7 +227,7 @@ export class AgentNetClient {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pendingTasks.delete(correlationId);
-        reject(new AgentNetError('请求超时'));
+        reject(new AgentNetError('请求超时', 'TIMEOUT', 408));
       }, this.config.timeout);
 
       this.pendingTasks.set(correlationId, {
