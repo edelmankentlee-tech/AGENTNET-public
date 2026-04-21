@@ -8733,10 +8733,14 @@ Execute the task methodically. Think before acting. Use tools when needed. Provi
     console.log('可视化配置面板:');
     console.log('  node src/standalone-agent.js --config-panel');
     console.log('');
-    console.log('构建SEA单文件（无需Node.js运行）:');
-    console.log('  npm run build:sea:win     # Windows');
-    console.log('  npm run build:sea:linux   # Linux');
-    console.log('  npm run build:sea:mac     # macOS');
+    console.log('构建安装包（发布）:');
+    console.log('  npm run release:pack:win     # Windows');
+    console.log('  npm run release:pack:linux   # Linux x64');
+    console.log('  npm run release:pack:linux-arm   # Linux ARM64');
+    console.log('  npm run release:pack:mac     # macOS x64');
+    console.log('  npm run release:pack:mac-arm # macOS ARM64');
+    console.log('  npm run release:clean         # 清理dist目录');
+    console.log('  npm run release:verify        # 发布链路校验（不打包）');
     console.log('');
     console.log('配置文件位置:');
     console.log(`  ${configPath}`);

@@ -29,6 +29,10 @@ cd agentnet-agent
 
 # 安装依赖（可选，核心功能无需依赖）
 npm install
+
+# 可选：直接打包当前版本（生产分发）
+npm run release:clean
+npm run release:pack:all
 ```
 
 ### 3. 配置
@@ -71,6 +75,26 @@ npm run check
 
 # 查看版本
 npm run version
+
+# 发布链路验证（仅验证，不打包）
+npm run release:verify
+```
+
+### 6. 安装包下载部署（参考）
+
+```bash
+# 下载后进入解压目录
+cd <release_directory>
+
+# 执行平台安装脚本
+./scripts/install.sh         # Linux/macOS
+scripts\install.bat          # Windows
+
+# 启动检查
+node src/standalone-agent.js --self-check
+
+# 启动服务
+npm start
 ```
 
 ## 配置说明
@@ -136,8 +160,8 @@ node src/standalone-agent.js [选项]
   --setup          交互式配置向导
   --config-panel   启动Web配置面板
   --self-check     自检模式（验证Agent功能）
-  --version, -v    显示版本信息
   --help, -h       显示帮助信息
+  --version, -v    显示版本信息
 ```
 
 ## 内置能力
