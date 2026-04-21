@@ -21,6 +21,34 @@ import {
   RateLimitError
 } from './errors';
 
+interface EnterpriseTaskOptions extends CreateTaskOptions {
+  status?: string;
+  context?: string;
+  action?: string;
+  microtask?: string;
+  agent_hint?: string;
+  organization_id?: string;
+  fleet_id?: string;
+  correlation_id?: string;
+  request_id?: string;
+  task_id?: string;
+}
+
+const readText = (value: unknown): string => {
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number') return String(value);
+  return '';
+};
+
+const uniqueStrings = (values: Array<unknown>): string[] => {
+  const set = new Set<string>();
+  for (const value of values) {
+    const text = readText(value);
+    if (text) set.add(text);
+  }
+  return Array.from(set);
+};
+
 /**
  * AgentNet 客户端
  */
@@ -90,30 +118,60 @@ export class AgentNetClient {
   /**
    * 创建任务
    */
-  async createTask(options: CreateTaskOptions): Promise<{ task_id: string }> {
-    const taskId = uuidv4();
+  async createTask(options: EnterpriseTaskOptions): Promise<{ task_id: string; request_id: string; correlation_id: string }> {
+    const taskId = readText(options.task_id) || readText((options as { request_id?: string }).request_id) || uuidv4();
+    const requestId = readText((options as { request_id?: string }).request_id) || uuidv4();
+    const correlationId = readText((options as { correlation_id?: string }).correlation_id) || requestId;
+
+    const taskData = {
+      ...options,
+      task_id: taskId,
+      context: readText(options.context) || (options as Record<string, unknown>).projectId,
+      action: readText(options.action) || readText((options as Record<string, unknown>).title),
+      type: readText((options as { type: string }).type),
+      input: (options as Record<string, unknown>).input,
+      request_id: requestId,
+      correlation_id: correlationId,
+    };
+
     const message = {
       type: 'create_task',
       task_id: taskId,
-      payload: options
+      request_id: requestId,
+      correlation_id: correlationId,
+      status: readText((options as { status?: string }).status) || TaskStatus.PENDING,
+      context: taskData.context,
+      action: taskData.action,
+      microtask: readText(options.microtask),
+      agent_hint: readText(options.agent_hint),
+      organization_id: readText(options.organization_id),
+      fleet_id: readText(options.fleet_id),
+      payload: taskData
     };
 
     await this.send(message);
 
-    return { task_id: taskId };
+    return {
+      task_id: taskId,
+      request_id: requestId,
+      correlation_id: correlationId
+    };
   }
 
   /**
    * 获取任务状态
    */
   async getTask(taskId: string): Promise<TaskResult> {
+    const requestId = uuidv4();
+    const correlationId = requestId;
     const message = {
       type: 'get_task',
-      task_id: taskId
+      task_id: taskId,
+      request_id: requestId,
+      correlation_id: correlationId,
     };
 
-    // 发送请求并等待响应
-    const response = await this.sendAndWait(message, taskId);
+    const response = await this.sendAndWait(message, [taskId, requestId, correlationId]);
     return response as TaskResult;
   }
 
@@ -137,14 +195,18 @@ export class AgentNetClient {
     capabilityId: string,
     input: Record<string, unknown>
   ): Promise<CapabilityResult> {
+    const requestId = uuidv4();
+    const correlationId = uuidv4();
     const message = {
       type: 'call_capability',
       task_id: taskId,
+      request_id: requestId,
+      correlation_id: correlationId,
       capability_id: capabilityId,
       input
     };
 
-    const response = await this.sendAndWait(message, `${taskId}:${capabilityId}`);
+    const response = await this.sendAndWait(message, [taskId, requestId, correlationId]);
     return response as CapabilityResult;
   }
 
@@ -223,25 +285,41 @@ export class AgentNetClient {
   /**
    * 发送消息并等待响应
    */
-  private sendAndWait(message: object, correlationId: string): Promise<unknown> {
+  private sendAndWait(message: object, correlationIds: string | string[]): Promise<unknown> {
+    const keys = uniqueStrings(Array.isArray(correlationIds) ? correlationIds : [correlationIds]);
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        this.pendingTasks.delete(correlationId);
+        for (const key of keys) {
+          this.pendingTasks.delete(key);
+        }
         reject(new AgentNetError('请求超时', 'TIMEOUT', 408));
       }, this.config.timeout);
 
-      this.pendingTasks.set(correlationId, {
-        resolve: (result) => {
+      const taskState = {
+        resolve: (result: unknown) => {
           clearTimeout(timeout);
+          for (const key of keys) {
+            this.pendingTasks.delete(key);
+          }
           resolve(result);
         },
-        reject: (error) => {
+        reject: (error: Error) => {
           clearTimeout(timeout);
+          for (const key of keys) {
+            this.pendingTasks.delete(key);
+          }
           reject(error);
-        }
-      });
+        },
+      };
 
-      this.send(message).catch(reject);
+      for (const key of keys) {
+        this.pendingTasks.set(key, taskState);
+      }
+
+      this.send(message).catch((error) => {
+        taskState.reject(error instanceof Error ? error : new Error(String(error)));
+      });
     });
   }
 
@@ -250,30 +328,53 @@ export class AgentNetClient {
    */
   private handleMessage(data: string): void {
     try {
-      const message = JSON.parse(data);
-      const { type, task_id, payload } = message;
+      const message = JSON.parse(data) as Record<string, unknown>;
+      const type = readText(message.type);
+      const payload = message.payload as TaskEvent | Record<string, unknown> | null;
+      const taskId = readText(message.task_id);
+      const requestId = readText(message.request_id);
+      const correlationId = readText(message.correlation_id);
+      const taskCorrelationIds = uniqueStrings([taskId, requestId, correlationId, readText((message as Record<string, unknown>).id)]);
 
       if (type === 'decision_required') {
-        // 处理决策请求
         const decision = payload as DecisionRequest;
         this.decisionHandlers.forEach((handler) => {
           handler(decision).catch(console.error);
         });
-      } else if (task_id) {
-        // 处理任务事件
-        const event = payload as TaskEvent;
-        const handlers = this.eventHandlers.get(task_id);
-        handlers?.forEach((handler) => handler(event));
+        return;
+      }
 
-        // 处理待响应的 Promise
-        const pending = this.pendingTasks.get(task_id);
-        if (pending) {
-          if (event.type === 'task_completed' || event.type === 'task_failed') {
-            pending.resolve(event.payload);
-          } else {
-            pending.resolve(event);
-          }
+      if (!payload) return;
+
+      if (taskId) {
+        const event = payload as TaskEvent;
+        const handlers = this.eventHandlers.get(taskId);
+        handlers?.forEach((handler) => handler(event));
+      }
+
+      const pendingKey = taskCorrelationIds.find((key) => this.pendingTasks.has(key));
+      if (!pendingKey) return;
+      const pending = this.pendingTasks.get(pendingKey);
+      if (!pending) return;
+
+      if (type === 'task_event' || type === 'task_progress') {
+        pending.resolve(message);
+        return;
+      }
+
+      if (typeof (payload as TaskEvent).type === 'string') {
+        const payloadType = readText((payload as TaskEvent).type);
+        if (payloadType === 'task_completed' || payloadType === 'task_failed') {
+          pending.resolve((payload as TaskEvent).payload);
+          return;
         }
+      }
+
+      const event = payload as TaskEvent;
+      if (readText(event.type) && readText((event as TaskEvent).type)) {
+        pending.resolve(event);
+      } else {
+        pending.resolve(message);
       }
     } catch (error) {
       console.error('[AgentNet] 解析消息失败:', error);
