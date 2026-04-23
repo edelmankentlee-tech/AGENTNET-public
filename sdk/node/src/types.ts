@@ -8,10 +8,12 @@
  */
 export enum TaskStatus {
   PENDING = 'pending',
-  RUNNING = 'running',
+  IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
-  FAILED = 'failed',
-  CANCELLED = 'cancelled'
+  BLOCKED = 'blocked',
+  RUNNING = 'in_progress',
+  FAILED = 'blocked',
+  CANCELLED = 'blocked'
 }
 
 /**
@@ -49,7 +51,6 @@ export interface CreateTaskOptions {
   type: string;
   input: TaskInput;
   context?: TaskContext;
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
   timeout_ms?: number;
   orchestration?: {
     dag?: DAGStep[];

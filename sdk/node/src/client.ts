@@ -49,6 +49,15 @@ const uniqueStrings = (values: Array<unknown>): string[] => {
   return Array.from(set);
 };
 
+const normalizeTaskStatus = (raw: unknown): string => {
+  const value = readText(raw).toLowerCase();
+  if (!value) return TaskStatus.PENDING;
+  if (value === 'running') return TaskStatus.IN_PROGRESS;
+  if (value === 'done') return TaskStatus.COMPLETED;
+  if (['failed', 'cancelled', 'error'].includes(value)) return TaskStatus.BLOCKED;
+  return value;
+};
+
 /**
  * AgentNet 客户端
  */
@@ -139,7 +148,7 @@ export class AgentNetClient {
       task_id: taskId,
       request_id: requestId,
       correlation_id: correlationId,
-      status: readText((options as { status?: string }).status) || TaskStatus.PENDING,
+      status: normalizeTaskStatus((options as { status?: string }).status) || TaskStatus.PENDING,
       context: taskData.context,
       action: taskData.action,
       microtask: readText(options.microtask),
